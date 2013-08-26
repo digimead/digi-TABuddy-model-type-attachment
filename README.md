@@ -1,4 +1,4 @@
 digi-TABuddy-model-type-solidAttachment
 =======================================
 
-TABuddy data model type SolidAttachment
+SolidAttachment type for TABuddy-Model - a human-centric K,V framework
