@@ -1,5 +1,5 @@
 /**
- * SolidAttachment type for TABuddy-Model - a human-centric K,V framework
+ * Attachment type for TABuddy-Model - a human-centric K,V framework
  *
  * Copyright (c) 2013 Alexey Aksenov ezh@ezh.msk.ru
  *
@@ -16,20 +16,21 @@
  * limitations under the License.
  */
 
-package org.digimead.tabuddy.model.dsl.attachment
+package org.digimead.tabuddy.model.dsl
 
-import org.digimead.digi.lib.DependencyInjection
-import org.digimead.tabuddy.model.dsl.DSLType
-import org.digimead.tabuddy.model.dsl.attachment.solid.SolidAttachment
+import org.digimead.tabuddy.model.dsl.attachment.Attachment
+import org.yaml.snakeyaml.constructor.Construct
+import org.yaml.snakeyaml.representer.Represent
 
 import com.escalatesoft.subcut.inject.NewBindingModule
 
 /**
  * This is the DSL Type extension for TA Buddy model.
  */
-package object solid {
-  lazy val default = new NewBindingModule(module => {
-    module.bind[DSLType] identifiedBy "DSLType.SolidAttachment" toSingle { new SolidAttachment.Type }
+package object attachment {
+  lazy val default = new NewBindingModule(module ⇒ {
+    module.bind[Construct] identifiedBy ("YAML.Construct.DSLType.Attachment") toSingle { new Attachment.Construct }
+    module.bind[Represent] identifiedBy ("YAML.Represent.DSLType.Attachment") toSingle { new Attachment.Represent }
+    module.bind[DSLType] identifiedBy "DSLType.Attachment" toSingle { new Attachment.Type }
   })
-  DependencyInjection.setPersistentInjectable("org.digimead.tabuddy.model.dsl.attachment.solid.SolidAttachment$DI$")
 }

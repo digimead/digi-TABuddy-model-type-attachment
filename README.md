@@ -1,4 +1,4 @@
-digi-TABuddy-model-type-solidAttachment
+digi-TABuddy-model-type-attachment
 =======================================
 
-SolidAttachment type for TABuddy-Model - a human-centric K,V framework
+Attachment type for TABuddy-Model - a human-centric K,V framework

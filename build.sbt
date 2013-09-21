@@ -19,9 +19,9 @@ import sbt.osgi.manager._
 
 OSGiManager //  ++ sbt.scct.ScctPlugin.instrumentSettings
 
-name := "Digi-TABuddy-Model-Type-SolidAttachment"
+name := "Digi-TABuddy-Model-Type-Attachment"
 
-description := "TABuddy data model type SolidAttachment"
+description := "TABuddy data model type Attachment"
 
 licenses := Seq("The Apache Software License, Version 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
 
@@ -29,14 +29,14 @@ organization := "org.digimead"
 
 organizationHomepage := Some(url("http://digimead.org"))
 
-homepage := Some(url("https://github.com/digimead/digi-TABuddy-model-type-SolidAttachment"))
+homepage := Some(url("https://github.com/digimead/digi-TABuddy-model-type-Attachment"))
 
 version <<= (baseDirectory) { (b) => scala.io.Source.fromFile(b / "version").mkString.trim }
 
 inConfig(OSGiConf)({
   import OSGiKey._
   Seq[Project.Setting[_]](
-    osgiBndBundleSymbolicName := "org.digimead.tabuddy.model.dsl.attachment.solid",
+    osgiBndBundleSymbolicName := "org.digimead.tabuddy.model.dsl.attachment",
     osgiBndBundleCopyright := "Copyright © 2013 Alexey B. Aksenov/Ezh. All rights reserved.",
     osgiBndExportPackage := List("org.digimead.*"),
     osgiBndImportPackage := List("!org.aspectj.*", "!sun.misc.*", "*"),
