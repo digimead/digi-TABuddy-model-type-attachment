@@ -47,7 +47,7 @@ import com.escalatesoft.subcut.inject.NewBindingModule
 class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper with LoggingHelper with Loggable {
   @volatile private var folder: Option[File] = None
   val config = new NewBindingModule(module ⇒ {
-    module.bind[DSLType] identifiedBy "Attachment" toSingle { new Attachment.Type }
+    module.bind[DSLType] identifiedBy "PlainAttachment" toSingle { new Plain.Type }
     module.bind[File] identifiedBy "Temp" toSingle {
       val temp = File.createTempFile("TA-Buddy-", "-temp")
       if (!temp.delete())
@@ -77,9 +77,12 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
         val graph = Graph[Model]('john1, 'john1, Model.scope, YAMLSerialization.Identifier, UUID.randomUUID(), Element.timestamp(1, 1))
         val model = graph.model.eSet('AAAKey, "AAA").eSet('BBBKey, "BBB").eRelative
         val record = model.record('test).eRelative
-        val attachment = Attachment(record, attachmentOrigin.toURI, None)
-        record.eSet[Attachment]('test, Some(attachment))
-        val stored = record.eGet[Attachment]('test).get.get
+
+        evaluating { Attachment[Plain](record, "asdf:sdaf", null, None) } should produce[IllegalArgumentException]
+
+        val attachment = Attachment[Plain](record, attachmentOrigin.toURI, None)
+        record.eSet[Plain]('test, Some(attachment))
+        val stored = record.eGet[Plain]('test).get.get
 
         val stream = stored.open
         stream.available() should not be (true)
@@ -102,7 +105,7 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
 
         val graph2 = Serialization.acquire(graph.origin, folder.toURI)
         val record2 = graph2.model.e(record.eReference).get
-        val attachment2 = record2.eGet[Attachment]('test).get
+        val attachment2 = record2.eGet[Plain]('test).get
 
         evaluating { attachment2.## } should produce[IllegalStateException]
         evaluating { attachment2.## } should produce[IllegalStateException]
@@ -120,7 +123,7 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
         log.___glance("DUMP: " + Graph.dump(graph2, false))
         val graph3 = graph2.copy()
         val test2 = (graph3.model | RecordLocation('test2)).eRelative
-        test2.eSet[Attachment]('anotherAttachmentReference, Some(attachment2))
+        test2.eSet[Plain]('anotherAttachmentReference, Some(attachment2))
         test2.eGraph.eq(graph3) should be(true)
         test2.eGraph.ne(graph2) should be(true)
         graph3.nodes.size should be(3)
@@ -128,129 +131,66 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
         graph3 should not be (graph)
         graph3 should not be (graph2)
 
-        test2.eGet[Attachment]('anotherAttachmentReference).get should be(record2.eGet[Attachment]('test).get)
-        test2.eGet[Attachment]('anotherAttachmentReference).get.eq(record2.eGet[Attachment]('test).get) should be(true)
+        test2.eGet[Plain]('anotherAttachmentReference).get should be(record2.eGet[Plain]('test).get)
+        test2.eGet[Plain]('anotherAttachmentReference).get.eq(record2.eGet[Plain]('test).get) should be(true)
 
         val timestamp1 = Serialization.freeze(graph3)
         val graphA = Serialization.acquire(graph3.origin, folder.toURI, timestamp)
         val graphB = Serialization.acquire(graph3.origin, folder.toURI, timestamp1)
         val attA = (graphA.model & RecordLocation('test)).eRelative
         val attB = (graphB.model & RecordLocation('test2)).eRelative
-        attA.eGet[Attachment]('test).get should be(attB.eGet[Attachment]('anotherAttachmentReference).get)
-        attA.eGet[Attachment]('test).get.ne(attB.eGet[Attachment]('anotherAttachmentReference).get) should be(true)
+        attA.eGet[Plain]('test).get should be(attB.eGet[Plain]('anotherAttachmentReference).get)
+        attA.eGet[Plain]('test).get.ne(attB.eGet[Plain]('anotherAttachmentReference).get) should be(true)
 
-        attA.eGet[Attachment]('test).get.get.## should be(record.eGet[Attachment]('test).get.get.##)
-        attA.eGet[Attachment]('test).get.get.uri should be(record.eGet[Attachment]('test).get.get.uri)
-        attB.eGet[Attachment]('anotherAttachmentReference).get.get.## should be(record.eGet[Attachment]('test).get.get.##)
-        attB.eGet[Attachment]('anotherAttachmentReference).get.get.uri should be(record.eGet[Attachment]('test).get.get.uri)
+        attA.eGet[Plain]('test).get.get.## should be(record.eGet[Plain]('test).get.get.##)
+        attA.eGet[Plain]('test).get.get.uri should be(record.eGet[Plain]('test).get.get.uri)
+        attB.eGet[Plain]('anotherAttachmentReference).get.get.## should be(record.eGet[Plain]('test).get.get.##)
+        attB.eGet[Plain]('anotherAttachmentReference).get.get.uri should be(record.eGet[Plain]('test).get.get.uri)
 
-        Hash.digest(attA.eGet[Attachment]('test).get.get.open, Attachment.digestType) should be(Some(stored.digest()))
-        Hash.digest(attB.eGet[Attachment]('anotherAttachmentReference).get.get.open, Attachment.digestType) should be(Some(stored.digest()))
+        Hash.digest(attA.eGet[Plain]('test).get.get.open, Attachment.digestType) should be(Some(stored.digest()))
+        Hash.digest(attB.eGet[Plain]('anotherAttachmentReference).get.get.open, Attachment.digestType) should be(Some(stored.digest()))
       }
     }
-    it("should rename an attachement") {
+    it("should copy and move, rename an attachement") {
       withTempFolder { folder ⇒
-        /*        AttachmentTypeSpec_j1.this.folder = Some(folder)
-        Model.reset()
-        val attachment = new File(folder, "test.txt")
-        Some(new PrintWriter(attachment)).foreach { p ⇒ p.write("hello world"); p.close }
-        val record = Model.record('test) { record ⇒ }
-        val data = Attachment("test1", record, attachment)
-        val stream = data.attachment()
-        stream should not be ('empty)
-        stream.get.close
-        val storage = new File(data.storage().get)
-        storage should be('isDirectory)
-        val attachment1 = new File(storage, "test1")
-        attachment1 should be('isFile)
-        attachment1.length() should be(attachment.length())
-        // copy to new
-        val newData = Attachment("test2", record, data.attachment.get)
-        val attachment2 = new File(storage, "test2")
-        attachment2 should be('isFile)
-        attachment2.length() should be(attachment.length())
-        // remove old
-        Attachment.clear(data)
-        data.attachment() should be('empty)
-        val attachment3 = newData.attachment()
-        attachment3 should not be ('empty)
-        attachment3.get.close()
+        import TestDSL._
 
-        attachment1 should not be ('exists)*/
-      }
-    }
-    it("should copy and move attachement between elements") {
-      withTempFolder { folder ⇒
-        /*        AttachmentTypeSpec_j1.this.folder = Some(folder)
-        Model.reset()
-        val attachment = new File(folder, "test.txt")
-        Some(new PrintWriter(attachment)).foreach { p ⇒ p.write("hello world"); p.close }
-        val record1 = Model.record('test1) { record ⇒ }
-        val record2 = Model.record('test2) { record ⇒ }
-        val record3 = Model.record('test3) { record ⇒ }
-        val data1 = Attachment("test1", record1, attachment)
-        val stream1 = data1.attachment()
-        stream1 should not be ('empty)
-        stream1.get.close
-        data1.attachment() should not be ('empty)
-        val data2 = Attachment.copy(data1, record2)
-        val stream2 = data2.attachment()
-        stream2 should not be ('empty)
-        stream2.get.close
-        val data3 = Attachment.move(data1, record3)
-        val stream3 = data3.attachment()
-        stream3 should not be ('empty)
-        stream3.get.close
-        data1.available should be(false)
-        data1.digest should be('empty)
-        data1.attachment should be('empty)*/
-      }
-    }
-    it("should serialize and deserialize value") {
-      withTempFolder { folder ⇒
-        /*        AttachmentTypeSpec_j1.this.folder = Some(folder)
-        Model.reset()
-        val attachment = new File(folder, "test.txt")
-        Some(new PrintWriter(attachment)).foreach { p ⇒ p.write("hello world"); p.close }
-        val record1 = Model.record('test1) { record ⇒ }
-        val value1 = Value.static(record1, Attachment("test1", record1, attachment))
-        val str = DSLType.inner.convertToString(value1.get).get
-        val data = DSLType.inner.convertFromString[Attachment](str)
-        assert(data.get === value1.get)
-        record1.eSet('file, Some(value1))
-        val serialized = YAMLSerialization.to(record1)
-        val deserialized = YAMLSerialization.from(serialized)
-        attachment should be('exists)
-        deserialized should not be ('empty)
-        deserialized.get.eGet('file, 'Attachment).get.get should be(value1.get)
-        val record2 = Model.record('test2) { record ⇒ }
-        record2.eSet('file, Some(value1))
-        val a = new BuiltinSerialization
-        var frozen: Seq[Array[Byte]] = Seq()
-        a.freeze(record2, (element, data) ⇒ { frozen = frozen :+ data })
-        val b = new BuiltinSerialization
-        val frozenIterator = frozen.iterator
-        val test = b.acquire[Record[Record.Stash], Record.Stash](() ⇒ { if (frozenIterator.hasNext) Some(frozenIterator.next) else None })
-        assert(test.get === record2)
-        assert(test.get.eGet('file, 'Attachment).get.get === record2.eGet('file, 'Attachment).get.get)
-        attachment should be('exists)
-        val attachmentValue = test.get.eGet[Attachment]('file).get
-        attachmentValue should be(value1)
-        value1.get.digest should not be ('empty)
-        attachmentValue.get.digest should not be ('empty)
-        test.get.eGet[Attachment]('file).get.get.digest should not be ('empty)
-        assert(test.get.eGet[Attachment]('file).get.get.digest === record2.eGet[Attachment]('file).get.get.digest)
+        // create an attachment
+        val attachmentOrigin = new File(folder, "test.txt")
+        Some(new PrintWriter(attachmentOrigin)).foreach { p ⇒ p.write("hello world"); p.close }
 
-        val serialized2 = BuiltinSerialization.to(record2)
-        val deserialized2 = BuiltinSerialization.from(serialized2)
-        assert(record2 === deserialized2.get)
+        val graph = Graph[Model]('john1, 'john1, Model.scope, YAMLSerialization.Identifier, UUID.randomUUID(), Element.timestamp(1, 1))
+        Reference.register(graph)
+        val model = graph.model.eSet('AAAKey, "AAA").eSet('BBBKey, "BBB").eRelative
+        val record = model.record('test).eRelative
+        val attachment = Attachment[Plain](record, attachmentOrigin.toURI, None)
+        record.eSet[Plain]('test, Some(attachment))
+        val stored = record.eGet[Plain]('test).get.get
+        stored.digest() should be("5eb63bbbe01eeed093cb22bb8f5acdc3")
+        stored.name should be("test.txt")
+        stored.uri should be('empty)
 
-        val serialized1 = BuiltinSerialization.to(record1)
-        Attachment.clear(record1.eGet[Attachment]('file).get) // delete
-        val deserialized1 = BuiltinSerialization.from(serialized1)
-        assert(record1 === deserialized1.get)
-        deserialized1.get.eGet[Attachment]('file).get.get.attachment should be('empty) // attachment is deleted
-        deserialized1.get.eGet[Attachment]('file).get.get.digest should be('empty)*/
+        graph.storages = graph.storages :+ folder.getAbsoluteFile().toURI()
+        stored.uri.head.toString() should endWith("test.txt")
+
+        val recordM1 = Attachment.move[Plain](record, 'test, record, 'test, "test2.txt")
+        recordM1.eGet[Plain]('test).get.get.name should be("test2.txt")
+        val recordM2 = Attachment.copy[Plain](recordM1, 'test, recordM1, 'test2)
+        val attM1 = recordM2.eGet[Plain]('test).get.get
+        val attM2 = recordM2.eGet[Plain]('test2).get.get
+        attM1.## should be(attM2.##)
+        attM1 should be(attM2)
+        val recordM3 = Attachment.rename[Plain](recordM2, 'test2, "test321.txt")
+        recordM3.eGet[Plain]('test2).get.get.name should be("test321.txt")
+        recordM2.eGet[Plain]('test2).get.get.name should be("test2.txt")
+        Hash.digest(recordM3.eGet[Plain]('test2).get.get.open, Attachment.digestType) should be(Some("5eb63bbbe01eeed093cb22bb8f5acdc3"))
+        Hash.digest(recordM2.eGet[Plain]('test2).get.get.open, Attachment.digestType) should be(Some("5eb63bbbe01eeed093cb22bb8f5acdc3"))
+        val ts = Serialization.freeze(graph)
+        val graph2 = Serialization.acquire(graph.origin, graph.storages.head, ts)
+        val recordFromGraph2 = graph2.model | RecordLocation('test)
+        //System.err.println(graph2.model.eDump(false))
+        Hash.digest(recordFromGraph2.eGet[Plain]('test).get.get.open, Attachment.digestType) should be(Some("5eb63bbbe01eeed093cb22bb8f5acdc3"))
+        Hash.digest(recordFromGraph2.eGet[Plain]('test2).get.get.open, Attachment.digestType) should be(Some("5eb63bbbe01eeed093cb22bb8f5acdc3"))
       }
     }
   }

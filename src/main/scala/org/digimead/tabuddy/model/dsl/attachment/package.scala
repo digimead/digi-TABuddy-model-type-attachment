@@ -29,8 +29,8 @@ import com.escalatesoft.subcut.inject.NewBindingModule
  */
 package object attachment {
   lazy val default = new NewBindingModule(module ⇒ {
-    module.bind[Construct] identifiedBy ("YAML.Construct.DSLType.Attachment") toSingle { new Attachment.Construct }
-    module.bind[Represent] identifiedBy ("YAML.Represent.DSLType.Attachment") toSingle { new Attachment.Represent }
-    module.bind[DSLType] identifiedBy "DSLType.Attachment" toSingle { new Attachment.Type }
+    module.bind[Construct] identifiedBy ("YAML.Construct.DSLType.PlainAttachment") toSingle { new Plain.Construct }
+    module.bind[Represent] identifiedBy ("YAML.Represent.DSLType.PlainAttachment") toSingle { new Plain.Represent }
+    module.bind[DSLType] identifiedBy "DSLType.PlainAttachment" toSingle { new Plain.Type }
   })
 }
