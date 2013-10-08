@@ -32,8 +32,8 @@ object TestDSL extends DSL
   with Record.DSL
   with Note.DSL
   with Task.DSL {
-  implicit def e2DSL[A <: Element](e: A) = new ElementSpecificDSL(e)
-  implicit def me2DSL[A <: Element](me: Element.Relative[A]) = new ElementSpecificDSL(me.absolute)
+  implicit def e2DSL(e: Element) = new ElementGenericDSL(e)
+  implicit def me2DSL(me: Element.Relative[_ <: Element]) = new ElementGenericDSL(me.absolute)
   implicit def eRecord2DSL[A <: Record.Like](e: A) = new RecordSpecificDSL(e)
   implicit def meRecord2DSL[A <: Record.Like](me: Element.Relative[A]) = new RecordSpecificDSL(me.absolute)
   implicit def eNote2DSL[A <: Note.Like](e: A) = new NoteSpecificDSL(e)

@@ -74,7 +74,7 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
         val attachmentOrigin = new File(folder, "test.txt")
         Some(new PrintWriter(attachmentOrigin)).foreach { p ⇒ p.write("hello world"); p.close }
 
-        val graph = Graph[Model]('john1, 'john1, Model.scope, YAMLSerialization.Identifier, UUID.randomUUID(), Element.timestamp(1, 1))
+        val graph = Graph[Model]('john1, 'john1, Model.scope, YAMLSerialization.Identifier, UUID.randomUUID(), Element.timestamp(1, 1)) { g ⇒ }
         val model = graph.model.eSet('AAAKey, "AAA").eSet('BBBKey, "BBB").eRelative
         val record = model.record('test).eRelative
 
@@ -116,12 +116,12 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
         attachment2 should be(attachment)
         graph.node.safeRead { node ⇒
           graph2.node.safeRead { node2 ⇒
-            node.iteratorRecursive().corresponds(node2.iteratorRecursive()) { (a, b) ⇒ a.ne(b) && a.modified == b.modified && a.elementType == b.elementType }
+            node.iteratorRecursive.corresponds(node2.iteratorRecursive) { (a, b) ⇒ a.ne(b) && a.modified == b.modified && a.elementType == b.elementType }
           }
         } should be(true)
 
         log.___glance("DUMP: " + Graph.dump(graph2, false))
-        val graph3 = graph2.copy()
+        val graph3 = graph2.copy() { g ⇒ }
         val test2 = (graph3.model | RecordLocation('test2)).eRelative
         test2.eSet[Plain]('anotherAttachmentReference, Some(attachment2))
         test2.eGraph.eq(graph3) should be(true)
@@ -159,7 +159,7 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
         val attachmentOrigin = new File(folder, "test.txt")
         Some(new PrintWriter(attachmentOrigin)).foreach { p ⇒ p.write("hello world"); p.close }
 
-        val graph = Graph[Model]('john1, 'john1, Model.scope, YAMLSerialization.Identifier, UUID.randomUUID(), Element.timestamp(1, 1))
+        val graph = Graph[Model]('john1, 'john1, Model.scope, YAMLSerialization.Identifier, UUID.randomUUID(), Element.timestamp(1, 1)) { g ⇒ }
         Reference.register(graph)
         val model = graph.model.eSet('AAAKey, "AAA").eSet('BBBKey, "BBB").eRelative
         val record = model.record('test).eRelative

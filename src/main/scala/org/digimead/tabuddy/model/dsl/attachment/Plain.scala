@@ -44,7 +44,6 @@ import org.digimead.tabuddy.model.serialization.Serialization
 import org.digimead.tabuddy.model.serialization.transport.Transport
 import org.digimead.tabuddy.model.serialization.yaml
 import org.digimead.tabuddy.model.serialization.yaml.YAML
-import org.digimead.tabuddy.model.serialization.yaml.YAML.yaml2implementation
 import org.yaml.snakeyaml.error.YAMLException
 import org.yaml.snakeyaml.nodes.Node
 import org.yaml.snakeyaml.nodes.Tag
@@ -78,7 +77,7 @@ class Plain(val internal: Either[(Element, File), Element.Timestamp], val name: 
             case Some(transport) ⇒
               Attachment.log.debug(s"Acquire descriptor from ${descriptionURI}.")
               val descriptionContent = transport.read(descriptionURI)
-              (yaml.YAML.loadAs(new String(descriptionContent, io.Codec.UTF8.charSet),
+              (yaml.YAML.block.loadAs(new String(descriptionContent, io.Codec.UTF8.charSet),
                 classOf[Plain.Description]).asInstanceOf[Plain.Description], Some(storageURI, descriptionURI))
             case None ⇒
               throw new IllegalStateException(s"Transport for the specified scheme '${descriptionURI.getScheme()}' not found.")
@@ -239,7 +238,7 @@ object Plain {
             transport.write(attachment.open(), attachmentURI)
             val descriptionURI = transport.append(elementDirectoryURI, Attachment.directoryName, attachment.name + Attachment.descriptionSuffix)
             log.debug(s"Freeze description to ${descriptionURI}.")
-            transport.write(YAML.dump(attachment.description).getBytes(io.Codec.UTF8.charSet), descriptionURI)
+            transport.write(YAML.block.dump(attachment.description).getBytes(io.Codec.UTF8.charSet), descriptionURI)
             if (attachment.storedTimestamp.isEmpty)
               attachment.storedTimestamp = Some(element.eGraph.modified)
           }
