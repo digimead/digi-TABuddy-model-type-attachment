@@ -1,7 +1,7 @@
 /**
  * Attachment type for TABuddy-Model - a human-centric K,V framework
  *
- * Copyright (c) 2013 Alexey Aksenov ezh@ezh.msk.ru
+ * Copyright (c) 2013-2014 Alexey Aksenov ezh@ezh.msk.ru
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,33 +18,22 @@
 
 package org.digimead.tabuddy.model.dsl.attachment
 
-import java.io.File
-import java.io.IOException
-import java.io.PrintWriter
+import TestDSL._
+import com.escalatesoft.subcut.inject.NewBindingModule
+import java.io.{ File, IOException, PrintWriter }
 import java.util.UUID
-
 import org.digimead.digi.lib.DependencyInjection
 import org.digimead.digi.lib.log.api.Loggable
 import org.digimead.digi.lib.util.Hash
-import org.digimead.lib.test.LoggingHelper
-import org.digimead.lib.test.StorageHelper
+import org.digimead.lib.test.{ LoggingHelper, StorageHelper }
 import org.digimead.tabuddy.model.Model
 import org.digimead.tabuddy.model.dsl.DSLType
-import org.digimead.tabuddy.model.element.Element
-import org.digimead.tabuddy.model.element.Reference
-import org.digimead.tabuddy.model.element.Reference.reference2implementation
-import org.digimead.tabuddy.model.element.Value.string2someValue
-import org.digimead.tabuddy.model.element.Value.value2x
+import org.digimead.tabuddy.model.element.{ Element, Reference }
 import org.digimead.tabuddy.model.graph.Graph
-import org.digimead.tabuddy.model.graph.Graph.graph2interface
-import org.digimead.tabuddy.model.serialization.Serialization
-import org.digimead.tabuddy.model.serialization.YAMLSerialization
-import org.scalatest.FunSpec
-import org.scalatest.matchers.ShouldMatchers
+import org.digimead.tabuddy.model.serialization.{ Serialization, YAMLSerialization }
+import org.scalatest.{ FunSpec, Matchers }
 
-import com.escalatesoft.subcut.inject.NewBindingModule
-
-class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper with LoggingHelper with Loggable {
+class AttachmentTypeSpec extends FunSpec with Matchers with StorageHelper with LoggingHelper with Loggable {
   @volatile private var folder: Option[File] = None
   val config = new NewBindingModule(module ⇒ {
     module.bind[DSLType] identifiedBy "PlainAttachment" toSingle { new Plain.Type }
@@ -59,11 +48,7 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
     }
   }) ~ default ~ org.digimead.tabuddy.model.default ~ org.digimead.digi.lib.default
 
-  after { adjustLoggingAfter }
-  before {
-    DependencyInjection(config, false)
-    adjustLoggingBefore
-  }
+  before { DependencyInjection(config, false) }
 
   describe("An Attachment Type") {
     it("should support the interface API") {
@@ -194,4 +179,6 @@ class AttachmentTypeSpec extends FunSpec with ShouldMatchers with StorageHelper 
       }
     }
   }
+
+  override def beforeAll(configMap: org.scalatest.ConfigMap) { adjustLoggingBeforeAll(configMap) }
 }

@@ -19,7 +19,7 @@ import sbt.osgi.manager._
 
 OSGiManager //  ++ sbt.scct.ScctPlugin.instrumentSettings
 
-name := "Digi-TABuddy-Model-Type-Attachment"
+name := "digi-tabuddy-model-type-attachment"
 
 description := "TABuddy data model type Attachment"
 
@@ -44,15 +44,17 @@ inConfig(OSGiConf)({
   )
 })
 
-crossScalaVersions := Seq("2.10.2")
+crossScalaVersions := Seq("2.10.3")
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 scalacOptions ++= Seq("-encoding", "UTF-8", "-deprecation", "-unchecked", "-Xcheckinit", "-feature") ++
   (if (true || (System getProperty "java.runtime.version" startsWith "1.7")) Seq() else Seq("-optimize")) // -optimize fails with jdk7
 
 // http://vanillajava.blogspot.ru/2012/02/using-java-7-to-target-much-older-jvms.html
 javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation", "-source", "1.6", "-target", "1.6")
+
+javacOptions in doc := Seq("-source", "1.6")
 
 if (sys.env.contains("XBOOTCLASSPATH")) Seq(javacOptions += "-Xbootclasspath:" + sys.env("XBOOTCLASSPATH")) else Seq()
 
@@ -64,12 +66,11 @@ sources in Compile in doc ~= (_ filter {file => false})
 
 resolvers += "digimead-maven" at "http://storage.googleapis.com/maven.repository.digimead.org/"
 
-libraryDependencies ++= {
-  Seq(
-    "org.digimead" %% "digi-tabuddy-model" % "0.1.1.0-SNAPSHOT",
-    "org.digimead" %% "digi-lib-util" % "0.2.3.4-SNAPSHOT"
-  )
-}
+libraryDependencies ++= Seq(
+  "org.digimead" %% "digi-tabuddy-model" % "0.1.1.0-SNAPSHOT",
+  "org.digimead" %% "digi-lib-util" % "0.2.3.4-SNAPSHOT",
+  "org.digimead" %% "digi-lib-test" % "0.2.2.4-SNAPSHOT" % "test"
+)
 
 //
 // Testing
@@ -77,7 +78,7 @@ libraryDependencies ++= {
 
 parallelExecution in Test := false
 
-testGrouping <<= (definedTests in Test) map { tests =>
+testGrouping in Test <<= (definedTests in Test) map { tests =>
   tests map { test =>
     new Tests.Group(
       name = test.name,

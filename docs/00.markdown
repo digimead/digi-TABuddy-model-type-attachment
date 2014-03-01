@@ -1,0 +1,14 @@
+---
+out: index.html
+---
+
+TA Buddy: Model Type Attachment
+===============================
+
+Attachment type for TA Buddy: Model - a human-centric K,V framework.
+
+<hr/>
+
+> [Latest stable version - UNKNOWN]($stable$)
+
+> [Latest development version - UNKNOWN]($development$)
